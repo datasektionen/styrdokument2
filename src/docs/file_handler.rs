@@ -1,12 +1,22 @@
 use std::fs;
 
+/// A regularory [Document] (styrdokument). The struct contains
+/// the official `name` of the document, the `filename` of the document,
+/// which has to be a `.typ` (typst) file for the rest of the program
+/// to function. The `url` field specifies what url should lead to this
+/// document.
+///
+/// The `directory` and `sub_documents` fields are there in case the "document"
+/// is actually a collection of documents, for example all the policies. Both need
+/// to be used if this is the case, as the `directory` field is needed to find the
+/// sub_documents.
 #[derive(serde::Deserialize, Clone, Debug, PartialEq, PartialOrd)]
 pub struct Document {
     name: String,
     filename: String,
     url: String,
-    directory: Option<String>,
-    sub_documents: Option<Vec<Document>>,
+    directory: Option<String>, // needed if the document has sub documents
+    sub_documents: Option<Vec<Document>>, // if the "document" is actually a directory
 }
 
 pub fn get_documents() -> Vec<Document> {
@@ -15,11 +25,30 @@ pub fn get_documents() -> Vec<Document> {
     parse_styrdokument_toml(content)
 }
 
+/// Wrapper for creating a [Vec<Document>].
 #[derive(serde::Deserialize, Clone, Debug)]
 struct DocumentWrapper {
     documents: Vec<Document>,
 }
 
+/// Parses a [toml] [String] to find an array of [Document]s.
+/// The [toml] [String] has to be of the form:
+///
+/// [[documents]]
+/// name = "name1"
+/// filename = "filename1.typ"
+/// url = "url1"
+///
+/// [[documents]]
+/// name = "name2"
+/// filename = "filename2.typ"
+/// url = "url2"
+/// directory = "dir1"
+///
+/// [[documents.sub_documents]]
+/// name = "name3"
+/// filename = "filename2.typ"
+/// url = "url3"
 fn parse_styrdokument_toml(toml_content: String) -> Vec<Document> {
     let dw: DocumentWrapper =
         toml::from_str(&toml_content).expect("Failed to parse styrdokument.toml");
