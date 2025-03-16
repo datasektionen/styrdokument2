@@ -1,3 +1,9 @@
+mod docs;
+mod web;
+
+use docs::get_documents;
+
 fn main() {
-    println!("Hello, world!");
+    let x = get_documents();
+    println!("{:?}", x);
 }
