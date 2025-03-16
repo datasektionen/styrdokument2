@@ -1,0 +1,9 @@
+[package]
+name = "styrdokument2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.10.2"
+toml = "0.8.20"
+typst = "0.13.1"
