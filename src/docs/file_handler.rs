@@ -60,6 +60,10 @@ mod tests {
     use super::*;
 
     #[test]
+    fn check_styrdokument_toml() {
+        let _ = get_documents();
+    }
+    #[test]
     #[should_panic]
     fn test_parse_styrdokument_toml_incorrect() {
         let content = "
