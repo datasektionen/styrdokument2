@@ -13,7 +13,7 @@ use typst::{
     syntax::{FileId, Source, VirtualPath},
     text::{Font, FontBook, FontInfo},
     utils::LazyHash,
-    Library,
+    Library, World,
 };
 
 use super::file_handler::Document;
@@ -22,10 +22,12 @@ pub struct Asgård {
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     root: PathBuf,
-    source: HashMap<FileId, Source>,
+    source: HashMap<FileId, FileEntry>,
     fonts: Vec<Font>,
-    files: Arc<Mutex<HashMap<FileId, Bytes>>>,
+    files: Arc<Mutex<HashMap<FileId, FileEntry>>>,
 }
+
+const MAIN: &str = "/main.typ";
 
 impl Asgård {
     pub fn new(document: &Document) -> Self {
@@ -37,14 +39,18 @@ impl Asgård {
 //    title: "{}"
 //)
 #include "../styrdokument/{}"
+git gud
             "#,
             document.title(),
-            document.filename()
+            document.full_path()
         );
 
         let mut sources = HashMap::new();
-        let main = create_source("/main.typ", content);
-        sources.insert(main.id(), main);
+        let main = create_whole_source(MAIN, content.clone());
+        let main_entry = FileEntry::new(content.into(), Some(main.clone()));
+        println!("main id: {:?}", main.id());
+        println!("docyment: {:?}", document);
+        sources.insert(main.id(), main_entry);
 
         let (book, fonts) = create_fontbook();
         let root = PathBuf::from("./typst/");
@@ -58,14 +64,16 @@ impl Asgård {
         }
     }
 
-    fn file_handler(&self, id: FileId) -> FileResult<Bytes> {
+    fn file_handler(&self, id: FileId) -> FileResult<FileEntry> {
         let mut files = self.files.lock().map_err(|_| FileError::AccessDenied)?;
         if let Some(entry) = files.get(&id) {
             return Ok(entry.clone());
         }
         let path = if let Some(_) = id.package() {
             // Fetching file from package
-            panic!("Packages not supported")
+            //let package_dir = self.download_package(package)?;
+            //id.vpath().resolve(&package_dir)
+            unimplemented!("Packages not included")
         } else {
             // Fetching file from disk
             id.vpath().resolve(&self.root)
@@ -73,7 +81,38 @@ impl Asgård {
         .ok_or(FileError::AccessDenied)?;
 
         let content = std::fs::read(&path).map_err(|error| FileError::from_io(error, &path))?;
-        Ok(files.entry(id).or_insert(Bytes::new(content)).clone())
+        Ok(files
+            .entry(id)
+            .or_insert(FileEntry::new(content, None))
+            .clone())
+    }
+}
+
+/// A File that will be stored in the HashMap.
+#[derive(Clone, Debug)]
+struct FileEntry {
+    bytes: Bytes,
+    source: Option<Source>,
+}
+
+impl FileEntry {
+    fn new(bytes: Vec<u8>, source: Option<Source>) -> Self {
+        Self {
+            bytes: Bytes::new(bytes),
+            source,
+        }
+    }
+
+    fn source(&mut self, id: FileId) -> FileResult<Source> {
+        let source = if let Some(source) = &self.source {
+            source
+        } else {
+            let contents = std::str::from_utf8(&self.bytes).map_err(|_| FileError::InvalidUtf8)?;
+            let contents = contents.trim_start_matches('\u{feff}');
+            let source = Source::new(id, contents.into());
+            self.source.insert(source)
+        };
+        Ok(source.clone())
     }
 }
 
@@ -92,23 +131,35 @@ impl typst::World for Asgård {
 
     /// Get the file id of the main source file.
     fn main(&self) -> FileId {
-        self.source.id()
+        create_file_id(MAIN)
     }
 
     /// Try to access the specified source file.
     fn source(&self, id: FileId) -> FileResult<Source> {
-        if id == self.source.id() {
-            Ok(self.source.clone())
-        } else {
-            //println!("id is {:?}", id);
-            //unimplemented!()
-            let f = self.file_handler(id)
+        println!("Searching for {:?}", id);
+        match self.source.get(&id) {
+            Some(d) => {
+                let mut d = d.clone();
+                d.source(id)
+            }
+            None => {
+                self.file_handler(id)?.source(id)
+                //unimplemented!()
+            }
         }
+        //if id == self.main() {
+        //    let d = self.source.get(&id).unwrap();
+        //    Ok(d.clone())
+        //} else {
+        //    println!("id is {:?}", id);
+        //    unimplemented!()
+        //    //let f = self.file_handler(id)
+        //}
     }
 
     /// Try to access the specified file.
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        self.file_handler(id)
+        self.file_handler(id).map(|file| file.bytes.clone())
     }
 
     /// Try to access the font with the given index in the font book.
@@ -129,18 +180,18 @@ impl typst::World for Asgård {
     }
 }
 
-fn create_source(filename: &str, content: String) -> Source {
+fn create_source(file_id: FileId, content: String) -> Source {
+    Source::new(file_id, content)
+}
+
+fn create_whole_source(filename: &str, content: String) -> Source {
     let file_id = create_file_id(filename);
     Source::new(file_id, content)
 }
 
 fn create_file_id(filename: &str) -> FileId {
-    FileId::new_fake(VirtualPath::new(filename))
+    FileId::new(None, VirtualPath::new(filename))
 }
-
-//fn create_source(document: &Document, path: String) -> Source {
-//    let 
-//}
 
 fn create_fontbook() -> (FontBook, Vec<Font>) {
     let paths = fs::read_dir("typst/fonts/").expect("Could not find ./typst/fonts");

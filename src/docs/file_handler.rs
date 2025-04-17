@@ -46,15 +46,29 @@ impl Document {
         &self.path
     }
 
-    fn from_intermediary(value: Intermediary, path: String) -> Self {
-        let is_directory = value.directory.is_some();
+    pub fn full_path(&self) -> String {
+        format!("{}/{}", self.path, self.filename)
+    }
+
+    fn from_intermediary(value: &Intermediary, path: String) -> Self {
+        let sub_documents = match &value.sub_documents {
+            Some(sd) => {
+                let next_path = format!("{}/{}", path, value.directory.clone().unwrap());
+                let res = sd
+                    .iter()
+                    .map(|d| Document::from_intermediary(&d, next_path.clone()))
+                    .collect();
+                Some(res)
+            }
+            None => None,
+        };
         Document {
-            name: value.name,
-            filename: value.filename,
-            url: value.url,
-            path: value.path,
-            directory: value.directory,
-            sub_documents: value.sub_documents,
+            name: value.name.clone(),
+            filename: value.filename.clone(),
+            url: value.url.clone(),
+            path,
+            directory: value.directory.clone(),
+            sub_documents,
         }
     }
 }
@@ -63,14 +77,11 @@ pub fn get_documents() -> Vec<Document> {
     let content = fs::read_to_string("styrdokument/styrdokument.toml")
         .expect("Failed to read styrdokument.toml");
     let intermidiary_documents = parse_styrdokument_toml(content);
-}
-
-fn convert_intermediaries(
-    intermidiary_documents: Vec<Intermediary>,
-    path: String,
-) -> Vec<Document> {
-    let docs = Vec::with_capacity(intermidiary_documents.len());
-    for doc in intermidiary_documents {}
+    let docs = intermidiary_documents
+        .iter()
+        .map(|d| Document::from_intermediary(d, "".to_string()))
+        .collect();
+    docs
 }
 
 /// Wrapper for creating a [Vec<Document>].
