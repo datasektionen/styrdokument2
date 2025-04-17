@@ -10,25 +10,73 @@ use std::fs;
 /// is actually a collection of documents, for example all the policies. Both need
 /// to be used if this is the case, as the `directory` field is needed to find the
 /// sub_documents.
-#[derive(serde::Deserialize, Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct Document {
     name: String,
     filename: String,
     url: String,
+    path: String,
     directory: Option<String>, // needed if the document has sub documents
     sub_documents: Option<Vec<Document>>, // if the "document" is actually a directory
+}
+
+#[derive(serde::Deserialize, Clone, Debug, PartialEq, PartialOrd)]
+struct Intermediary {
+    name: String,
+    filename: String,
+    url: String,
+    directory: Option<String>, // needed if the document has sub documents
+    sub_documents: Option<Vec<Intermediary>>, // if the "document" is actually a directory
+}
+
+impl Document {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn title(&self) -> &str {
+        self.name()
+    }
+
+    pub fn filename(&self) -> &str {
+        &self.filename
+    }
+
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    fn from_intermediary(value: Intermediary, path: String) -> Self {
+        let is_directory = value.directory.is_some();
+        Document {
+            name: value.name,
+            filename: value.filename,
+            url: value.url,
+            path: value.path,
+            directory: value.directory,
+            sub_documents: value.sub_documents,
+        }
+    }
 }
 
 pub fn get_documents() -> Vec<Document> {
     let content = fs::read_to_string("styrdokument/styrdokument.toml")
         .expect("Failed to read styrdokument.toml");
-    parse_styrdokument_toml(content)
+    let intermidiary_documents = parse_styrdokument_toml(content);
+}
+
+fn convert_intermediaries(
+    intermidiary_documents: Vec<Intermediary>,
+    path: String,
+) -> Vec<Document> {
+    let docs = Vec::with_capacity(intermidiary_documents.len());
+    for doc in intermidiary_documents {}
 }
 
 /// Wrapper for creating a [Vec<Document>].
 #[derive(serde::Deserialize, Clone, Debug)]
 struct DocumentWrapper {
-    documents: Vec<Document>,
+    documents: Vec<Intermediary>,
 }
 
 /// Parses a [toml] [String] to find an array of [Document]s.
@@ -49,7 +97,7 @@ struct DocumentWrapper {
 /// name = "name3"
 /// filename = "filename2.typ"
 /// url = "url3"
-fn parse_styrdokument_toml(toml_content: String) -> Vec<Document> {
+fn parse_styrdokument_toml(toml_content: String) -> Vec<Intermediary> {
     let dw: DocumentWrapper =
         toml::from_str(&toml_content).expect("Failed to parse styrdokument.toml");
     dw.documents
@@ -108,34 +156,34 @@ mod tests {
         ";
 
         let expected = vec![
-            Document {
+            Intermediary {
                 name: "Stadgar".to_string(),
                 filename: "stadgar.typ".to_string(),
                 url: "stadgar".to_string(),
                 directory: None,
                 sub_documents: None,
             },
-            Document {
+            Intermediary {
                 name: "Reglemente".to_string(),
                 filename: "reglemente.typ".to_string(),
                 url: "reglemente".to_string(),
                 directory: None,
                 sub_documents: None,
             },
-            Document {
+            Intermediary {
                 name: "Policies".to_string(),
                 filename: "policies.typ".to_string(),
                 url: "policies".to_string(),
                 directory: Some("policies".to_string()),
                 sub_documents: Some(vec![
-                    Document {
+                    Intermediary {
                         name: "Uppförandepolicy".to_string(),
                         filename: "uppförandepolicy.typ".to_string(),
                         url: "uppforandepolicy".to_string(),
                         directory: None,
                         sub_documents: None,
                     },
-                    Document {
+                    Intermediary {
                         name: "Samarbetspolicy".to_string(),
                         filename: "samarbetspolicy.typ".to_string(),
                         url: "samarbetspolicy".to_string(),

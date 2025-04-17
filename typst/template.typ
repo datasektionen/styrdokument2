@@ -56,7 +56,7 @@
           "figures/shield.svg",
           width: 1.5cm,
         )),
-        align(right + horizon, [#set text(datagray); #author \ #context counter(page).display("1/1", both: true)])
+        align(right + horizon, [#set text(datagray); #title \ #context counter(page).display("1/1", both: true)])
       )
     ],
   
