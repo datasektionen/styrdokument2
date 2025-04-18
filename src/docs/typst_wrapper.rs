@@ -13,7 +13,7 @@ use typst::{
     syntax::{FileId, Source, VirtualPath},
     text::{Font, FontBook, FontInfo},
     utils::LazyHash,
-    Library, World,
+    Library,
 };
 
 use super::file_handler::Document;
@@ -38,11 +38,11 @@ impl Asgård {
 //    date: datetime.today().display(),
 //    title: "{}"
 //)
-#include "../styrdokument/{}"
+#include "{}"
 git gud
             "#,
             document.title(),
-            document.full_path()
+            document.filename()
         );
 
         let mut sources = HashMap::new();
@@ -51,6 +51,13 @@ git gud
         println!("main id: {:?}", main.id());
         println!("docyment: {:?}", document);
         sources.insert(main.id(), main_entry);
+
+        let styrdok_content = document.contents();
+        println!("{}", styrdok_content);
+        let styrdok = create_whole_source(document.filename(), styrdok_content.clone());
+        let styrdok_entry = FileEntry::new(styrdok_content.into(), Some(styrdok.clone()));
+        sources.insert(styrdok.id(), styrdok_entry);
+        println!("sources: {:?}", sources);
 
         let (book, fonts) = create_fontbook();
         let root = PathBuf::from("./typst/");

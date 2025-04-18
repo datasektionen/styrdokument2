@@ -47,7 +47,11 @@ impl Document {
     }
 
     pub fn full_path(&self) -> String {
-        format!("{}/{}", self.path, self.filename)
+        format!("styrdokument/{}/{}", self.path, self.filename)
+    }
+
+    pub fn contents(&self) -> String {
+        std::fs::read_to_string(self.full_path()).expect("Failed to read document contents")
     }
 
     fn from_intermediary(value: &Intermediary, path: String) -> Self {
