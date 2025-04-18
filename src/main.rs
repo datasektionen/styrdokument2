@@ -9,9 +9,11 @@ use typst_pdf::PdfOptions;
 fn main() {
     let x = get_documents();
     println!("{:?}", x);
-    let stadgar = &x[0];
+    let stadgar = &x[2];
+    let pol = stadgar.sub_documents().unwrap();
+    let dok = &pol[0];
 
-    let docjob = Asgård::new(stadgar);
+    let docjob = Asgård::new(dok);
     let typed_doc = typst::compile(&docjob).output.expect("FUck compiling");
 
     let pdf = typst_pdf::pdf(&typed_doc, &PdfOptions::default()).expect("FFUKC export");

@@ -9,7 +9,7 @@
 
   set text(
     font: "Lato",
-    size: 11pt
+    size: 11pt,
   )
 
   // How text was meant to be

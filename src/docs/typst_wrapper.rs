@@ -33,11 +33,11 @@ impl Asgård {
     pub fn new(document: &Document) -> Self {
         let content = format!(
             r#"
-//#import "template.typ": *
-//#show: project.with(
-//    date: datetime.today().display(),
-//    title: "{}"
-//)
+#import "template.typ": *
+#show: project.with(
+    date: datetime.today().display(),
+    title: "{}"
+)
 #include "{}"
 git gud
             "#,
@@ -46,18 +46,14 @@ git gud
         );
 
         let mut sources = HashMap::new();
-        let main = create_whole_source(MAIN, content.clone());
+        let main = create_source(MAIN, content.clone());
         let main_entry = FileEntry::new(content.into(), Some(main.clone()));
-        println!("main id: {:?}", main.id());
-        println!("docyment: {:?}", document);
         sources.insert(main.id(), main_entry);
 
         let styrdok_content = document.contents();
-        println!("{}", styrdok_content);
-        let styrdok = create_whole_source(document.filename(), styrdok_content.clone());
+        let styrdok = create_source(document.filename(), styrdok_content.clone());
         let styrdok_entry = FileEntry::new(styrdok_content.into(), Some(styrdok.clone()));
         sources.insert(styrdok.id(), styrdok_entry);
-        println!("sources: {:?}", sources);
 
         let (book, fonts) = create_fontbook();
         let root = PathBuf::from("./typst/");
@@ -78,8 +74,6 @@ git gud
         }
         let path = if let Some(_) = id.package() {
             // Fetching file from package
-            //let package_dir = self.download_package(package)?;
-            //id.vpath().resolve(&package_dir)
             unimplemented!("Packages not included")
         } else {
             // Fetching file from disk
@@ -149,19 +143,8 @@ impl typst::World for Asgård {
                 let mut d = d.clone();
                 d.source(id)
             }
-            None => {
-                self.file_handler(id)?.source(id)
-                //unimplemented!()
-            }
+            None => self.file_handler(id)?.source(id),
         }
-        //if id == self.main() {
-        //    let d = self.source.get(&id).unwrap();
-        //    Ok(d.clone())
-        //} else {
-        //    println!("id is {:?}", id);
-        //    unimplemented!()
-        //    //let f = self.file_handler(id)
-        //}
     }
 
     /// Try to access the specified file.
@@ -187,11 +170,7 @@ impl typst::World for Asgård {
     }
 }
 
-fn create_source(file_id: FileId, content: String) -> Source {
-    Source::new(file_id, content)
-}
-
-fn create_whole_source(filename: &str, content: String) -> Source {
+fn create_source(filename: &str, content: String) -> Source {
     let file_id = create_file_id(filename);
     Source::new(file_id, content)
 }
@@ -205,25 +184,24 @@ fn create_fontbook() -> (FontBook, Vec<Font>) {
 
     let mut fonts = Vec::new();
     let mut fontbook = FontBook::new();
-    for (i, entry) in paths.enumerate() {
+    for entry in paths {
         let entry = match entry {
             Ok(p) => p,
             _ => continue,
         };
-        let i = i as u32;
 
         let path = entry.path();
         let data = match fs::read(&path) {
             Ok(bytes) => bytes,
             Err(_) => continue,
         };
-        let font = match Font::new(Bytes::new(data.clone()), i) {
+        let font = match Font::new(Bytes::new(data.clone()), 0) {
             Some(f) => f,
             None => continue,
         };
         fonts.push(font);
 
-        let info = FontInfo::new(data.as_slice(), i).expect("Could not parse font");
+        let info = FontInfo::new(data.as_slice(), 0).expect("Could not parse font");
         fontbook.push(info);
     }
 

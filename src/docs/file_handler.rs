@@ -50,6 +50,10 @@ impl Document {
         format!("styrdokument/{}/{}", self.path, self.filename)
     }
 
+    pub fn sub_documents(&self) -> Option<&Vec<Document>> {
+        self.sub_documents.as_ref()
+    }
+
     pub fn contents(&self) -> String {
         std::fs::read_to_string(self.full_path()).expect("Failed to read document contents")
     }
