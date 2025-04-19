@@ -13,7 +13,7 @@ fn main() {
     let pol = stadgar.sub_documents().unwrap();
     let dok = &pol[0];
 
-    let docjob = Asgård::new(dok);
+    let docjob = Asgård::pdf(dok);
     let typed_doc = typst::compile(&docjob).output.expect("FUck compiling");
 
     let pdf = typst_pdf::pdf(&typed_doc, &PdfOptions::default()).expect("FFUKC export");

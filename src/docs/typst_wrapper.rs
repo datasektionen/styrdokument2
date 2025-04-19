@@ -1,3 +1,7 @@
+// A wrapper for using and implementing the needed typst functions. Much of this code has been
+// inspired by, and in some cases completely stolen from,
+// [https://github.com/tfachmann/typst-as-library](https://github.com/tfachmann/typst-as-library).
+
 use std::{
     collections::HashMap,
     fs,
@@ -18,6 +22,21 @@ use typst::{
 
 use super::file_handler::Document;
 
+/// A typst "[World]", but you know it's a bit abstract and hard to fully understand - almost like
+/// the gods (don't think too much about it. I couldn't come up with an actually funny name).
+///
+/// * The `library` field contains the standard typst library meaning all the functions and stuff.
+/// * `book` is the [FontBook], which more or less is an index of all available fonts in the
+/// project.
+/// * `root` is the [PathBuf] root of the project, meaning where typst will search for all files
+/// declared in a document. This includes images, documents etc.
+/// * `source` contains the source files for the project, and in this case it's the files that do
+/// not exist in the root. This includes the `main` file which is declared below, and the
+/// styrdokument file which is outside of the `root`s scope.
+/// * `fonts` is simply a [Vec<Font>] which also contains all font data, which is indexed by the
+/// [FontBook].
+/// * `files` contains all files that have been found in the project. Don't think too much about
+/// it.
 pub struct Asgård {
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
@@ -27,10 +46,12 @@ pub struct Asgård {
     files: Arc<Mutex<HashMap<FileId, FileEntry>>>,
 }
 
+/// `MAIN` is simply the necessary filepath to the main document.
 const MAIN: &str = "/main.typ";
 
 impl Asgård {
-    pub fn new(document: &Document) -> Self {
+    /// Creates a typst [World] intended for `pdf` output. This will include document formatting.
+    pub fn pdf(document: &Document) -> Self {
         let content = format!(
             r#"
 #import "template.typ": *
@@ -39,12 +60,28 @@ impl Asgård {
     title: "{}"
 )
 #include "{}"
-git gud
             "#,
             document.title(),
             document.filename()
         );
 
+        Self::new(document, content)
+    }
+
+    /// Creates a typst [World] intended for `html` output. This does not include any formatting.
+    pub fn html(document: &Document) -> Self {
+        let content = format!(
+            r#"
+#include "{}"
+            "#,
+            document.title(),
+        );
+
+        Self::new(document, content)
+    }
+
+    /// Creates a new [Asgård] typst [World].
+    fn new(document: &Document, content: String) -> Self {
         let mut sources = HashMap::new();
         let main = create_source(MAIN, content.clone());
         let main_entry = FileEntry::new(content.into(), Some(main.clone()));
@@ -67,6 +104,7 @@ git gud
         }
     }
 
+    /// Handles importing files like documents and images from the `root` directory.
     fn file_handler(&self, id: FileId) -> FileResult<FileEntry> {
         let mut files = self.files.lock().map_err(|_| FileError::AccessDenied)?;
         if let Some(entry) = files.get(&id) {
@@ -89,7 +127,7 @@ git gud
     }
 }
 
-/// A File that will be stored in the HashMap.
+/// A [File] that will be stored in the HashMap.
 #[derive(Clone, Debug)]
 struct FileEntry {
     bytes: Bytes,
@@ -179,6 +217,7 @@ fn create_file_id(filename: &str) -> FileId {
     FileId::new(None, VirtualPath::new(filename))
 }
 
+/// Creates a [FontBook] which indexes the [Vec<Font>].
 fn create_fontbook() -> (FontBook, Vec<Font>) {
     let paths = fs::read_dir("typst/fonts/").expect("Could not find ./typst/fonts");
 
@@ -195,6 +234,7 @@ fn create_fontbook() -> (FontBook, Vec<Font>) {
             Ok(bytes) => bytes,
             Err(_) => continue,
         };
+        // For some unknown reason the `index` only works when it's `0`.
         let font = match Font::new(Bytes::new(data.clone()), 0) {
             Some(f) => f,
             None => continue,
