@@ -7,6 +7,7 @@ use std::{
     fs,
     path::PathBuf,
     sync::{Arc, Mutex},
+    vec,
 };
 
 use time;
@@ -17,7 +18,7 @@ use typst::{
     syntax::{FileId, Source, VirtualPath},
     text::{Font, FontBook, FontInfo},
     utils::LazyHash,
-    Library,
+    Feature, Features, Library, LibraryBuilder,
 };
 
 use super::file_handler::Document;
@@ -74,7 +75,7 @@ impl Asgård {
             r#"
 #include "{}"
             "#,
-            document.title(),
+            document.filename(),
         );
 
         Self::new(document, content)
@@ -94,8 +95,10 @@ impl Asgård {
 
         let (book, fonts) = create_fontbook();
         let root = PathBuf::from("./typst/");
+
+        let lib = asgård_library();
         Self {
-            library: LazyHash::new(Library::default()),
+            library: LazyHash::new(lib),
             book: LazyHash::new(book),
             fonts,
             root,
@@ -125,6 +128,18 @@ impl Asgård {
             .or_insert(FileEntry::new(content, None))
             .clone())
     }
+}
+
+/// Kind of the only way to enable [Html] output while it's in the experimental phase.
+/// TODO:
+/// Clean up and move from experimental flag when the html export is finished.
+fn asgård_library() -> Library {
+    let feature = vec![Feature::Html];
+    let features: Features = Features::from_iter(feature);
+    let builder = LibraryBuilder::default();
+    let real_builder = builder.with_features(features);
+
+    real_builder.build()
 }
 
 /// A [File] that will be stored in the HashMap.

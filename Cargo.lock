@@ -2155,6 +2155,7 @@ dependencies = [
  "time",
  "toml",
  "typst",
+ "typst-html",
  "typst-pdf",
 ]
 
