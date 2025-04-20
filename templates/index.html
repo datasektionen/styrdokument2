@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+{% macro includer(doc) %}
+  {% include {{ doc}} %}
+{% endmacro includer %}
+<html>
+  <body>
+    includer({{ document }})
+  </body>
+</html>
+
