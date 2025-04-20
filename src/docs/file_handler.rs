@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 /// A regularory [Document] (styrdokument). The struct contains
 /// the official `name` of the document, the `filename` of the document,
@@ -90,6 +90,36 @@ pub fn get_documents() -> Vec<Document> {
         .map(|d| Document::from_intermediary(d, "".to_string()))
         .collect();
     docs
+}
+
+pub fn hashed_documents(documents: Vec<Document>) -> HashMap<String, Document> {
+    let mut map = HashMap::with_capacity(documents.len());
+
+    hash_documents(&mut map, documents, None);
+
+    map
+}
+
+fn hash_documents(
+    map: &mut HashMap<String, Document>,
+    documents: Vec<Document>,
+    path: Option<&String>,
+) {
+    for d in documents {
+        let url = match path {
+            Some(p) => &format!("{}/{}", p, d.url),
+            None => &d.url,
+        };
+
+        match d.sub_documents() {
+            Some(ds) => {
+                hash_documents(map, ds.to_vec(), Some(&url));
+            }
+            None => (),
+        };
+
+        map.insert(url.to_string(), d.clone());
+    }
 }
 
 /// Wrapper for creating a [Vec<Document>].
