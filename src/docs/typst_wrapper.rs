@@ -233,7 +233,7 @@ fn create_file_id(filename: &str) -> FileId {
 }
 
 /// Creates a [FontBook] which indexes the [Vec<Font>].
-fn create_fontbook() -> (FontBook, Vec<Font>) {
+pub fn create_fontbook() -> (FontBook, Vec<Font>) {
     let paths = fs::read_dir("typst/fonts/").expect("Could not find ./typst/fonts");
 
     let mut fonts = Vec::new();
