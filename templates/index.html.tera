@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {% macro includer(doc) %}
-  {% include {{ doc}} %}
+  {% include {{doc}} %}
 {% endmacro includer %}
 <html>
   <body>

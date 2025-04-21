@@ -1,5 +1,6 @@
 use crate::docs::{hashed_documents, Document};
 use rocket::{get, routes, Build, Rocket, State};
+use rocket_dyn_templates::{context, Template};
 use std::{collections::HashMap, path::PathBuf};
 
 struct Spaceship {
@@ -7,8 +8,13 @@ struct Spaceship {
 }
 
 #[get("/")]
-fn index() -> String {
-    "Yo yo yo".to_string()
+fn index() -> Template {
+    Template::render(
+        "index",
+        context! {
+            document: "output.html"
+        },
+    )
 }
 
 #[get("/<name..>")]
@@ -30,6 +36,7 @@ pub fn rocket(documents: Vec<Document>) -> Rocket<Build> {
 
     rocket::build()
         .manage(spaceship)
+        .attach(Template::fairing())
         .mount("/", routes![index])
         .mount("/", routes![hello])
 }
