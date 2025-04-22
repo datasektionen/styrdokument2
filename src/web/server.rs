@@ -1,18 +1,18 @@
-use crate::docs::{hashed_documents, Document};
+use crate::docs::WebDocument;
 use rocket::{get, routes, Build, Rocket, State};
 use rocket_dyn_templates::{context, Template};
 use std::{collections::HashMap, path::PathBuf};
 
 struct Spaceship {
-    hash: HashMap<String, Document>,
+    hash: HashMap<String, WebDocument>,
 }
 
 #[get("/")]
 fn index() -> Template {
     Template::render(
-        "index",
+        "output",
         context! {
-            document: "output.html"
+            title: "i love styr",
         },
     )
 }
@@ -29,10 +29,8 @@ fn hello(name: PathBuf, spaceship: &State<Spaceship>) -> String {
     format!("Hello, {}!", thing)
 }
 
-pub fn rocket(documents: Vec<Document>) -> Rocket<Build> {
-    let document_map = hashed_documents(documents);
-
-    let spaceship = Spaceship { hash: document_map };
+pub fn rocket(documents: HashMap<String, WebDocument>) -> Rocket<Build> {
+    let spaceship = Spaceship { hash: documents };
 
     rocket::build()
         .manage(spaceship)

@@ -21,7 +21,7 @@ use typst::{
     Feature, Features, Library, LibraryBuilder,
 };
 
-use super::file_handler::Document;
+use super::file_handler::TypstDocument;
 
 /// A typst "[World]", but you know it's a bit abstract and hard to fully understand - almost like
 /// the gods (don't think too much about it. I couldn't come up with an actually funny name).
@@ -49,10 +49,11 @@ pub struct Asgård {
 
 /// `MAIN` is simply the necessary filepath to the main document.
 const MAIN: &str = "/main.typ";
+const DOCUMENT_PATH: &str = "./typst/";
 
 impl Asgård {
     /// Creates a typst [World] intended for `pdf` output. This will include document formatting.
-    pub fn pdf(document: &Document) -> Self {
+    pub fn pdf(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> Self {
         let content = format!(
             r#"
 #import "template.typ": *
@@ -66,11 +67,11 @@ impl Asgård {
             document.filename()
         );
 
-        Self::new(document, content)
+        Self::new(document, content, book, fonts)
     }
 
     /// Creates a typst [World] intended for `html` output. This does not include any formatting.
-    pub fn html(document: &Document) -> Self {
+    pub fn html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> Self {
         let content = format!(
             r#"
 #include "{}"
@@ -78,11 +79,11 @@ impl Asgård {
             document.filename(),
         );
 
-        Self::new(document, content)
+        Self::new(document, content, book, fonts)
     }
 
     /// Creates a new [Asgård] typst [World].
-    fn new(document: &Document, content: String) -> Self {
+    fn new(document: &TypstDocument, content: String, book: FontBook, fonts: Vec<Font>) -> Self {
         let mut sources = HashMap::new();
         let main = create_source(MAIN, content.clone());
         let main_entry = FileEntry::new(content.into(), Some(main.clone()));
@@ -93,8 +94,7 @@ impl Asgård {
         let styrdok_entry = FileEntry::new(styrdok_content.into(), Some(styrdok.clone()));
         sources.insert(styrdok.id(), styrdok_entry);
 
-        let (book, fonts) = create_fontbook();
-        let root = PathBuf::from("./typst/");
+        let root = PathBuf::from(DOCUMENT_PATH);
 
         let lib = asgård_library();
         Self {

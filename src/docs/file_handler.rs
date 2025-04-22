@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fs};
 
+use super::WebDocument;
+
 /// A regularory [Document] (styrdokument). The struct contains
 /// the official `name` of the document, the `filename` of the document,
 /// which has to be a `.typ` (typst) file for the rest of the program
@@ -11,13 +13,13 @@ use std::{collections::HashMap, fs};
 /// to be used if this is the case, as the `directory` field is needed to find the
 /// sub_documents.
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub struct Document {
+pub struct TypstDocument {
     name: String,
     filename: String,
     url: String,
     path: String,
     directory: Option<String>, // needed if the document has sub documents
-    sub_documents: Option<Vec<Document>>, // if the "document" is actually a directory
+    sub_documents: Option<Vec<TypstDocument>>, // if the "document" is actually a directory
 }
 
 #[derive(serde::Deserialize, Clone, Debug, PartialEq, PartialOrd)]
@@ -29,7 +31,7 @@ struct Intermediary {
     sub_documents: Option<Vec<Intermediary>>, // if the "document" is actually a directory
 }
 
-impl Document {
+impl TypstDocument {
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -42,6 +44,10 @@ impl Document {
         &self.filename
     }
 
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
     pub fn path(&self) -> &str {
         &self.path
     }
@@ -50,7 +56,7 @@ impl Document {
         format!("styrdokument/{}/{}", self.path, self.filename)
     }
 
-    pub fn sub_documents(&self) -> Option<&Vec<Document>> {
+    pub fn sub_documents(&self) -> Option<&Vec<TypstDocument>> {
         self.sub_documents.as_ref()
     }
 
@@ -64,13 +70,13 @@ impl Document {
                 let next_path = format!("{}/{}", path, value.directory.clone().unwrap());
                 let res = sd
                     .iter()
-                    .map(|d| Document::from_intermediary(&d, next_path.clone()))
+                    .map(|d| TypstDocument::from_intermediary(&d, next_path.clone()))
                     .collect();
                 Some(res)
             }
             None => None,
         };
-        Document {
+        TypstDocument {
             name: value.name.clone(),
             filename: value.filename.clone(),
             url: value.url.clone(),
@@ -81,45 +87,15 @@ impl Document {
     }
 }
 
-pub fn get_documents() -> Vec<Document> {
+pub fn get_documents() -> Vec<TypstDocument> {
     let content = fs::read_to_string("styrdokument/styrdokument.toml")
         .expect("Failed to read styrdokument.toml");
     let intermidiary_documents = parse_styrdokument_toml(content);
     let docs = intermidiary_documents
         .iter()
-        .map(|d| Document::from_intermediary(d, "".to_string()))
+        .map(|d| TypstDocument::from_intermediary(d, "".to_string()))
         .collect();
     docs
-}
-
-pub fn hashed_documents(documents: Vec<Document>) -> HashMap<String, Document> {
-    let mut map = HashMap::with_capacity(documents.len());
-
-    hash_documents(&mut map, documents, None);
-
-    map
-}
-
-fn hash_documents(
-    map: &mut HashMap<String, Document>,
-    documents: Vec<Document>,
-    path: Option<&String>,
-) {
-    for d in documents {
-        let url = match path {
-            Some(p) => &format!("{}/{}", p, d.url),
-            None => &d.url,
-        };
-
-        match d.sub_documents() {
-            Some(ds) => {
-                hash_documents(map, ds.to_vec(), Some(&url));
-            }
-            None => (),
-        };
-
-        map.insert(url.to_string(), d.clone());
-    }
 }
 
 /// Wrapper for creating a [Vec<Document>].

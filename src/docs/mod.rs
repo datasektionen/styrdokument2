@@ -2,10 +2,14 @@ mod exporter;
 mod file_handler;
 mod typst_wrapper;
 
-pub use file_handler::{get_documents, hashed_documents, Document};
-pub use typst_wrapper::Asgård;
+use std::collections::HashMap;
 
-pub fn setup() {
+use exporter::export;
+pub use exporter::WebDocument;
+use file_handler::get_documents;
+pub use file_handler::TypstDocument;
+
+pub fn setup() -> HashMap<String, WebDocument> {
     let documents = get_documents();
-    println!("bung");
+    export(&documents)
 }
