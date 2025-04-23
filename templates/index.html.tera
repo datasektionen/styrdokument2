@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{title}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  </head>
+  <body>
+    {% block content %}{% endblock content %}
+  </body>
+</html>
+

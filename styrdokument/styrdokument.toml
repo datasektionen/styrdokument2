@@ -1,0 +1,25 @@
+[[documents]]
+name = "Stadgar"
+filename = "stadgar.typ"
+url = "stadgar"
+
+[[documents]]
+name = "Reglemente"
+filename = "reglemente.typ"
+url = "reglemente"
+
+[[documents]]
+name = "Policies"
+filename = "policies.typ"
+url = "policies"
+directory = "policies"
+
+[[documents.sub_documents]]
+name = "Uppförandepolicy"
+filename = "uppförandepolicy.typ"
+url = "uppforandepolicy"
+
+[[documents.sub_documents]]
+name = "Samarbetspolicy"
+filename = "samarbetspolicy.typ"
+url = "samarbetspolicy"
