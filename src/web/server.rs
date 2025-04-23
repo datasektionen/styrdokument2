@@ -1,40 +1,71 @@
-use crate::docs::WebDocument;
-use rocket::{get, routes, Build, Rocket, State};
+use crate::docs::{WebDocument, HTML_DIRECTORY, PDF_DIRECTORY};
+use rocket::{
+    catch,
+    fs::{FileServer, Options},
+    get,
+    response::Redirect,
+    routes, Build, Rocket, State,
+};
 use rocket_dyn_templates::{context, Template};
 use std::{collections::HashMap, path::PathBuf};
 
-struct Spaceship {
+struct DocumentKeeper {
     hash: HashMap<String, WebDocument>,
 }
+
+const PAGE_TITLE_APPEND: &str = " - Datasektionens styrdokument";
 
 #[get("/")]
 fn index() -> Template {
     Template::render(
-        "output",
+        "home",
         context! {
-            title: "i love styr",
+            title: format!("{}{}", "Styrdokument", PAGE_TITLE_APPEND),
         },
     )
 }
 
-#[get("/<name..>")]
-fn hello(name: PathBuf, spaceship: &State<Spaceship>) -> String {
+#[catch(404)]
+fn not_found() -> Template {
+    Template::render(
+        "error",
+        context! {
+            title: format!("{}{}", "404", PAGE_TITLE_APPEND),
+        },
+    )
+}
+
+#[get("/dokument/<name..>")]
+fn display_document(name: PathBuf, document_keeper: &State<DocumentKeeper>) -> Template {
     let url = name.to_str().unwrap().to_string();
-    let doc = spaceship.hash.get(&url);
-    let thing = match doc {
-        Some(d) => d.name(),
-        None => "fuck",
+    let document = match document_keeper.hash.get(&url) {
+        Some(d) => d,
+        None => return not_found(),
     };
 
-    format!("Hello, {}!", thing)
+    Template::render(
+        format!("{}{}", HTML_DIRECTORY, document.filename()),
+        context! {
+            title: format!("{}{}", document.name(), PAGE_TITLE_APPEND),
+        },
+    )
+}
+
+#[get("/favicon.ico")]
+fn favicon() -> Redirect {
+    Redirect::to("/static/favicon.svg")
 }
 
 pub fn rocket(documents: HashMap<String, WebDocument>) -> Rocket<Build> {
-    let spaceship = Spaceship { hash: documents };
+    let spaceship = DocumentKeeper { hash: documents };
 
     rocket::build()
         .manage(spaceship)
         .attach(Template::fairing())
-        .mount("/", routes![index])
-        .mount("/", routes![hello])
+        .mount(
+            format!("/{}", PDF_DIRECTORY),
+            FileServer::new(PDF_DIRECTORY, Options::None),
+        )
+        .mount("/static", FileServer::new("static", Options::None))
+        .mount("/", routes![index, favicon, display_document])
 }

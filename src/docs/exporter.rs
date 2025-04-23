@@ -8,13 +8,15 @@ use super::{
     TypstDocument,
 };
 
-const HTML_OUTPUT: &str = "./templates/documents/";
-pub const PDF_DIRECTORY: &str = "/pdfs";
+pub const HTML_DIRECTORY: &str = "documents/";
+pub const PDF_DIRECTORY: &str = "public";
 const TEMPLATE_PREPEND: &str = r#"{% extends "index" %}{% block content %}"#;
 const TEMPLATE_APPEND: &str = r#"{% endblock content %}"#;
 
+#[derive(Clone)]
 pub struct WebDocument {
     name: String,
+    filename: String,
     pdf_url: String,
 }
 
@@ -22,12 +24,17 @@ impl WebDocument {
     fn new(value: &TypstDocument, pdf_url: String) -> Self {
         WebDocument {
             name: value.name().to_string(),
+            filename: value.filename_name().to_string(),
             pdf_url,
         }
     }
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn filename(&self) -> &str {
+        &self.filename
     }
 
     pub fn pdf_url(&self) -> &str {
@@ -90,7 +97,7 @@ fn export_pdf(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> Str
 
     let pdf = typst_pdf::pdf(&typed_doc, &PdfOptions::default()).expect("Error generating pdf");
 
-    let path = format!(".{}/{}.pdf", PDF_DIRECTORY, document.filename_name());
+    let path = format!("./{}/{}.pdf", PDF_DIRECTORY, document.filename_name());
     fs::write(path.clone(), pdf).expect("Error writing PDF.");
     path
 }
@@ -104,6 +111,10 @@ fn export_html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) {
     let mut html = typst_html::html(&typed_hmtl).expect("Error generating html");
     html = format!("{}\n{}\n{}", TEMPLATE_PREPEND, html, TEMPLATE_APPEND);
 
-    let path = format!("{}{}.html.tera", HTML_OUTPUT, document.filename_name());
+    let path = format!(
+        "./templates/{}{}.html.tera",
+        HTML_DIRECTORY,
+        document.filename_name()
+    );
     fs::write(path, html).expect("Error writing html");
 }

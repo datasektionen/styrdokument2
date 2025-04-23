@@ -5,7 +5,7 @@ mod typst_wrapper;
 use std::collections::HashMap;
 
 use exporter::export;
-pub use exporter::WebDocument;
+pub use exporter::{WebDocument, HTML_DIRECTORY, PDF_DIRECTORY};
 use file_handler::get_documents;
 pub use file_handler::TypstDocument;
 
