@@ -64,6 +64,11 @@ impl TypstDocument {
         std::fs::read_to_string(self.full_path()).expect("Failed to read document contents")
     }
 
+    pub fn filename_name(&self) -> &str {
+        let mut parts = self.filename.split(".typ");
+        parts.next().unwrap()
+    }
+
     fn from_intermediary(value: &Intermediary, path: String) -> Self {
         let sub_documents = match &value.sub_documents {
             Some(sd) => {

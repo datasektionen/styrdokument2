@@ -19,21 +19,19 @@ pub struct WebDocument {
 }
 
 impl WebDocument {
+    fn new(value: &TypstDocument, pdf_url: String) -> Self {
+        WebDocument {
+            name: value.name().to_string(),
+            pdf_url,
+        }
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }
 
     pub fn pdf_url(&self) -> &str {
         &self.pdf_url
-    }
-}
-
-impl From<&TypstDocument> for WebDocument {
-    fn from(value: &TypstDocument) -> Self {
-        WebDocument {
-            name: value.name().to_string(),
-            pdf_url: "".to_string(),
-        }
     }
 }
 
@@ -59,13 +57,16 @@ fn export_documents(
             None => d.url(),
         };
 
-        if map.insert(url.to_string(), d.into()).is_some() {
+        println!("exporting {}...", d.name());
+        let pdf_url = export_document(d, book.clone(), fonts.clone());
+        println!("... {} exported.", d.name());
+
+        if map
+            .insert(url.to_string(), WebDocument::new(d, pdf_url))
+            .is_some()
+        {
             panic!("The url {url} has occured multiple times");
         }
-
-        println!("exporting {}...", d.name());
-        export_document(d, book.clone(), fonts.clone());
-        println!("... {} exported.", d.name());
 
         match d.sub_documents() {
             Some(ds) => {
@@ -89,7 +90,7 @@ fn export_pdf(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> Str
 
     let pdf = typst_pdf::pdf(&typed_doc, &PdfOptions::default()).expect("Error generating pdf");
 
-    let path = format!(".{}/{}.pdf", PDF_DIRECTORY, document.filename());
+    let path = format!(".{}/{}.pdf", PDF_DIRECTORY, document.filename_name());
     fs::write(path.clone(), pdf).expect("Error writing PDF.");
     path
 }
@@ -103,6 +104,6 @@ fn export_html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) {
     let mut html = typst_html::html(&typed_hmtl).expect("Error generating html");
     html = format!("{}\n{}\n{}", TEMPLATE_PREPEND, html, TEMPLATE_APPEND);
 
-    let path = format!("{}{}.html.tera", HTML_OUTPUT, document.filename());
+    let path = format!("{}{}.html.tera", HTML_OUTPUT, document.filename_name());
     fs::write(path, html).expect("Error writing html");
 }

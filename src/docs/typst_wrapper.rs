@@ -190,7 +190,6 @@ impl typst::World for Asgård {
 
     /// Try to access the specified source file.
     fn source(&self, id: FileId) -> FileResult<Source> {
-        println!("Searching for {:?}", id);
         match self.source.get(&id) {
             Some(d) => {
                 let mut d = d.clone();
