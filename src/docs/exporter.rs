@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fs};
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+    io::{BufWriter, Write},
+};
 
 use typst::text::{Font, FontBook};
 use typst_pdf::PdfOptions;
@@ -18,6 +22,12 @@ pub struct WebDocument {
     name: String,
     filename: String,
     pdf_url: String,
+}
+
+struct NavDocument {
+    name: String,
+    url: String,
+    sub_documents: Option<Vec<NavDocument>>,
 }
 
 impl WebDocument {
@@ -46,7 +56,8 @@ pub fn export(documents: &Vec<TypstDocument>) -> HashMap<String, WebDocument> {
     let (book, fonts) = create_fontbook();
     let mut document_mapping = HashMap::new();
 
-    export_documents(&mut document_mapping, documents, book, fonts, None);
+    let nav_documents = export_documents(&mut document_mapping, documents, book, fonts, None);
+    generate_side_navbar(nav_documents);
 
     document_mapping
 }
@@ -57,7 +68,8 @@ fn export_documents(
     book: FontBook,
     fonts: Vec<Font>,
     url_path: Option<&str>,
-) {
+) -> Vec<NavDocument> {
+    let mut nav_documents = Vec::new();
     for d in documents {
         let url = match url_path {
             Some(p) => &format!("{}/{}", p, d.url()),
@@ -75,13 +87,25 @@ fn export_documents(
             panic!("The url {url} has occured multiple times");
         }
 
-        match d.sub_documents() {
-            Some(ds) => {
-                export_documents(map, ds, book.clone(), fonts.clone(), Some(url));
-            }
-            None => (),
+        let sub_docs = match d.sub_documents() {
+            Some(ds) => Some(export_documents(
+                map,
+                ds,
+                book.clone(),
+                fonts.clone(),
+                Some(url),
+            )),
+            None => None,
         };
+
+        nav_documents.push(NavDocument {
+            name: d.name().to_string(),
+            url: format!("/dokument/{}", url),
+            sub_documents: sub_docs,
+        });
     }
+
+    nav_documents
 }
 
 fn export_document(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> String {
@@ -117,4 +141,51 @@ fn export_html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) {
         document.filename_name()
     );
     fs::write(path, html).expect("Error writing html");
+}
+
+fn generate_side_navbar(nav_documents: Vec<NavDocument>) {
+    let path = "./templates/navbar.html.tera";
+    let file = File::create(path).expect("Cannot create navbar template");
+    let mut writer = BufWriter::new(file);
+
+    for d in nav_documents {
+        if d.sub_documents.is_none() {
+            writeln!(
+                &mut writer,
+                r#"
+<ul>
+  <li>
+    <a {{% if "{}" == name %}} class="text-theme-color strong" {{% endif %}} href="{}">{}</a>
+  </li>
+</ul>"#,
+                d.name, d.url, d.name
+            )
+            .unwrap();
+        } else {
+            writeln!(
+                &mut writer,
+                r#"
+<h3 style="margin-top: 1rem;">
+  <a {{% if "{}" == name %}} class="text-theme-color strong" {{% endif %}} href="{}">{}</a>
+</h3>"#,
+                d.name, d.url, d.name
+            )
+            .unwrap();
+
+            for ds in d.sub_documents.unwrap() {
+                writeln!(
+                    &mut writer,
+                    r#"
+<ul>
+<li style="margin-left: 2rem;">
+  <a {{% if "{}" == name %}} class="text-theme-color strong" {{% endif %}} href="{}">{}</a>
+</li>
+</ul>"#,
+                    ds.name, ds.url, ds.name
+                )
+                .unwrap();
+            }
+            writeln!(&mut writer, r#"<p style="margin-bottom: 1rem;"/>"#,).unwrap();
+        }
+    }
 }

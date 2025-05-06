@@ -52,6 +52,14 @@
         </div>
       </header>
       <div id="content">
+        <div class="col-sm-4 col-md-3">
+          <div id="secondary-nav">
+            <h2 style="text-align: center; border-bottom: 2px solid #eee; padding-bottom: 1.2rem;">
+              <a href="/"> Styrdokument </a>
+            </h2>
+            {% include "navbar" %}
+          </div>
+        </div>
         <div class="col-sm-9">
           {% block content %}{% endblock content %}
         </div>
