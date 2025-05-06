@@ -1,6 +1,5 @@
-use std::{collections::HashMap, fs};
+use std::fs;
 
-use super::WebDocument;
 
 /// A regularory [Document] (styrdokument). The struct contains
 /// the official `name` of the document, the `filename` of the document,
@@ -75,7 +74,7 @@ impl TypstDocument {
                 let next_path = format!("{}/{}", path, value.directory.clone().unwrap());
                 let res = sd
                     .iter()
-                    .map(|d| TypstDocument::from_intermediary(&d, next_path.clone()))
+                    .map(|d| TypstDocument::from_intermediary(d, next_path.clone()))
                     .collect();
                 Some(res)
             }
