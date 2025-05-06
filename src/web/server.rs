@@ -21,6 +21,8 @@ fn index() -> Template {
         "home",
         context! {
             title: format!("{}{}", "Styrdokument", PAGE_TITLE_APPEND),
+            name: "Styrdokument",
+            pdf: "",
         },
     )
 }
@@ -31,6 +33,8 @@ fn not_found() -> Template {
         "error",
         context! {
             title: format!("{}{}", "404", PAGE_TITLE_APPEND),
+            name: "404",
+            pdf: "",
         },
     )
 }
@@ -47,6 +51,8 @@ fn display_document(name: PathBuf, document_keeper: &State<DocumentKeeper>) -> T
         format!("{}{}", HTML_DIRECTORY, document.filename()),
         context! {
             title: format!("{}{}", document.name(), PAGE_TITLE_APPEND),
+            name: document.name(),
+            pdf: format!("/{}", document.pdf_url()),
         },
     )
 }

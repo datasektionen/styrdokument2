@@ -1,11 +1,62 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{{title}}</title>
+    <meta charset="utf-8" />
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="//aurora.datasektionen.se" />
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <script type="text/javascript">
+      window.methone_conf = {
+        system_name: "styrdokument",
+        color_scheme: "cerise",
+        login_text: "",
+        login_link: "#",
+        links: [
+          {
+            str: "Styrdokument",
+            href: "/"
+          },
+          {
+              str: "Stadgar",
+              href: "/dokument/stadgar/"
+          },
+          {
+              str: "Reglemente",
+              href: "/dokument/reglemente/"
+          }
+        ]
+      }
+    </script>
+    <script async src="//methone.datasektionen.se/bar.js"></script>
   </head>
   <body>
-    {% block content %}{% endblock content %}
+    <div id="methone-container-replace"></div>
+    <div id="application" class="cerise">
+      <header>
+        <div class="header-inner">
+          <div class="row">
+            <div class="header-left col-md-2">
+              {% if pdf != "" %}
+                <a href={{ pdf }} class="primary-action">PDF</a>
+              {% endif %}
+            </div>
+            <div class="col-md-8">
+              <h2>{{ name }}</h2>
+            </div>
+            <div class="header-right col-md-2">
+              <span class="visible-lg-inline">Se på</span>
+              <a href="https://github.com/datasektionen/styrdokument2" class="primary-action">GitHub</a>
+            </div>
+          </div>
+          <div class="clear"></div>
+        </div>
+      </header>
+      <div id="content">
+        <div class="col-sm-9">
+          {% block content %}{% endblock content %}
+        </div>
+      </div>
+    </div>
   </body>
 </html>
 
