@@ -10,7 +10,6 @@ use std::{
     vec,
 };
 
-use time;
 use typst::{
     self,
     diag::{FileError, FileResult},
@@ -113,7 +112,7 @@ impl Asgård {
         if let Some(entry) = files.get(&id) {
             return Ok(entry.clone());
         }
-        let path = if let Some(_) = id.package() {
+        let path = if id.package().is_some() {
             // Fetching file from package
             unimplemented!("Packages not included")
         } else {

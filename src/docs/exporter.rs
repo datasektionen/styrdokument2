@@ -87,16 +87,13 @@ fn export_documents(
             panic!("The url {url} has occured multiple times");
         }
 
-        let sub_docs = match d.sub_documents() {
-            Some(ds) => Some(export_documents(
+        let sub_docs = d.sub_documents().map(|ds| export_documents(
                 map,
                 ds,
                 book.clone(),
                 fonts.clone(),
                 Some(url),
-            )),
-            None => None,
-        };
+            ));
 
         nav_documents.push(NavDocument {
             name: d.name().to_string(),
