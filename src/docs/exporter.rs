@@ -164,11 +164,11 @@ fn export_html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) {
 fn prepare_export_dirs() {
     let html_path = "./templates/documents";
     let _ = remove_dir_all(html_path);
-    create_dir(html_path).expect(&format!("Could not create {}", html_path));
+    create_dir(html_path).unwrap_or_else(|_| panic!("Could not create {}", html_path));
 
     let pdf_path = &format!("./{}", PDF_DIRECTORY);
     let _ = remove_dir_all(pdf_path);
-    create_dir(pdf_path).expect(&format!("Could not create {}", pdf_path));
+    create_dir(pdf_path).unwrap_or_else(|_| panic!("Could not create {}", pdf_path));
 }
 
 /// Generates the the `tera` template for the right hand navbar.

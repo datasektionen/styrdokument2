@@ -28,17 +28,16 @@ use super::file_handler::TypstDocument;
 /// everything typst will use for compiling the documents.
 ///
 /// * The `library` field contains the standard typst library meaning all the functions and stuff.
-/// * `book` is the [FontBook], which more or less is an index of all available fonts in the
-/// project.
+/// * `book` is the [FontBook], which more or less is an index of all available fonts in the project.
 /// * `root` is the [PathBuf] root of the project, meaning where typst will search for all files
-/// declared in a document. This includes images, documents etc.
+///   declared in a document. This includes images, documents etc.
 /// * `source` contains the source files for the project, and in this case it's the files that do
-/// not exist in the root. This includes the `main` file which is declared below, and the
-/// styrdokument file which is outside of the `root` scope.
+///   not exist in the root. This includes the `main` file which is declared below, and the
+///   styrdokument file which is outside of the `root` scope.
 /// * `fonts` is simply a [Vec<Font>] which also contains all font data, which is indexed by the
-/// [FontBook].
+///   [FontBook].
 /// * `files` contains all files that have been found in the project. Don't think too much about
-/// it.
+///   it.
 pub struct Asgård {
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
