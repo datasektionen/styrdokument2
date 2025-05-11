@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    fs::{self, File},
+    fs::{self, create_dir, remove_dir_all, File},
     io::{BufWriter, Write},
 };
 
@@ -56,6 +56,7 @@ pub fn export(documents: &Vec<TypstDocument>) -> HashMap<String, WebDocument> {
     let (book, fonts) = create_fontbook();
     let mut document_mapping = HashMap::new();
 
+    prepare_export_dirs();
     let nav_documents = export_documents(&mut document_mapping, documents, book, fonts, None);
     generate_side_navbar(nav_documents);
 
@@ -87,13 +88,9 @@ fn export_documents(
             panic!("The url {url} has occured multiple times");
         }
 
-        let sub_docs = d.sub_documents().map(|ds| export_documents(
-                map,
-                ds,
-                book.clone(),
-                fonts.clone(),
-                Some(url),
-            ));
+        let sub_docs = d
+            .sub_documents()
+            .map(|ds| export_documents(map, ds, book.clone(), fonts.clone(), Some(url)));
 
         nav_documents.push(NavDocument {
             name: d.name().to_string(),
@@ -138,6 +135,18 @@ fn export_html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) {
         document.filename_name()
     );
     fs::write(path, html).expect("Error writing html");
+}
+
+/// Deletes the export directories along with their contents and then creates new empty directories
+/// to ensure that these exist for new exported content.
+fn prepare_export_dirs() {
+    let html_path = "./templates/documents";
+    let _ = remove_dir_all(html_path);
+    create_dir(html_path).expect(&format!("Could not create {}", html_path));
+
+    let pdf_path = &format!("./{}", PDF_DIRECTORY);
+    let _ = remove_dir_all(pdf_path);
+    create_dir(pdf_path).expect(&format!("Could not create {}", pdf_path));
 }
 
 fn generate_side_navbar(nav_documents: Vec<NavDocument>) {
