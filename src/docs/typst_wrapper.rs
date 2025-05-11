@@ -23,7 +23,9 @@ use typst::{
 use super::file_handler::TypstDocument;
 
 /// A typst "[World]", but you know it's a bit abstract and hard to fully understand - almost like
-/// the gods (don't think too much about it. I couldn't come up with an actually funny name).
+/// the gods (don't think too much about it. I couldn't come up with a funnier name). Either way
+/// the typst [World] is basically the entirety of the project and therefore has to contain
+/// everything typst will use for compiling the documents.
 ///
 /// * The `library` field contains the standard typst library meaning all the functions and stuff.
 /// * `book` is the [FontBook], which more or less is an index of all available fonts in the
@@ -32,7 +34,7 @@ use super::file_handler::TypstDocument;
 /// declared in a document. This includes images, documents etc.
 /// * `source` contains the source files for the project, and in this case it's the files that do
 /// not exist in the root. This includes the `main` file which is declared below, and the
-/// styrdokument file which is outside of the `root`s scope.
+/// styrdokument file which is outside of the `root` scope.
 /// * `fonts` is simply a [Vec<Font>] which also contains all font data, which is indexed by the
 /// [FontBook].
 /// * `files` contains all files that have been found in the project. Don't think too much about
@@ -46,8 +48,9 @@ pub struct Asgård {
     files: Arc<Mutex<HashMap<FileId, FileEntry>>>,
 }
 
-/// `MAIN` is simply the necessary filepath to the main document.
+/// `MAIN` contains the "filename" of the main file, which in typst **has** to be `/main.typ`.
 const MAIN: &str = "/main.typ";
+/// The absolute path to where the typst templating files are stored.
 const DOCUMENT_PATH: &str = "./typst/";
 
 impl Asgård {
@@ -86,12 +89,12 @@ impl Asgård {
         let mut sources = HashMap::new();
         let main = create_source(MAIN, content.clone());
         let main_entry = FileEntry::new(content.into(), Some(main.clone()));
-        sources.insert(main.id(), main_entry);
+        sources.insert(main.id(), main_entry); // add the very short "main" document
 
         let styrdok_content = document.contents();
         let styrdok = create_source(document.filename(), styrdok_content.clone());
         let styrdok_entry = FileEntry::new(styrdok_content.into(), Some(styrdok.clone()));
-        sources.insert(styrdok.id(), styrdok_entry);
+        sources.insert(styrdok.id(), styrdok_entry); // add the styrdokument
 
         let root = PathBuf::from(DOCUMENT_PATH);
 
@@ -131,7 +134,7 @@ impl Asgård {
 
 /// Kind of the only way to enable [Html] output while it's in the experimental phase.
 /// TODO:
-/// Clean up and move from experimental flag when the html export is finished.
+/// Clean up and move from experimental flag when the html export feature from typst is finished.
 fn asgård_library() -> Library {
     let feature = vec![Feature::Html];
     let features: Features = Features::from_iter(feature);
@@ -149,6 +152,7 @@ struct FileEntry {
 }
 
 impl FileEntry {
+    /// Creates a new [FileEntry], who would have thought?
     fn new(bytes: Vec<u8>, source: Option<Source>) -> Self {
         Self {
             bytes: Bytes::new(bytes),
@@ -156,6 +160,9 @@ impl FileEntry {
         }
     }
 
+    /// Gets the required file from a [FileId], preferably already from the [Source], but if it
+    /// has not already been added to the file pool of the [World] it will try to get it and then
+    /// add it to the file pool.
     fn source(&mut self, id: FileId) -> FileResult<Source> {
         let source = if let Some(source) = &self.source {
             source
@@ -221,11 +228,13 @@ impl typst::World for Asgård {
     }
 }
 
+/// Creates a [Source] based on a document.
 fn create_source(filename: &str, content: String) -> Source {
     let file_id = create_file_id(filename);
     Source::new(file_id, content)
 }
 
+/// Creates a [FileId] based on a filename.
 fn create_file_id(filename: &str) -> FileId {
     FileId::new(None, VirtualPath::new(filename))
 }
