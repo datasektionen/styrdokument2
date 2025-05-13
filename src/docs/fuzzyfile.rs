@@ -35,6 +35,7 @@ pub fn generate_fuzzyfile(web_documents: &HashMap<String, WebDocument>) {
             doc.name(),
             doc.name().to_lowercase(),
             url,
+            // because json is a cringe fucking shit language the last thing cannot have a ','
             if i + 1 < web_documents.len() { "," } else { "" }
         )
         .unwrap();
