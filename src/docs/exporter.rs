@@ -8,6 +8,7 @@ use typst::text::{Font, FontBook};
 use typst_pdf::PdfOptions;
 
 use super::{
+    fuzzyfile::generate_fuzzyfile,
     typst_wrapper::{create_fontbook, Asgård},
     TypstDocument,
 };
@@ -76,6 +77,8 @@ pub fn export(documents: &Vec<TypstDocument>) -> HashMap<String, WebDocument> {
     prepare_export_dirs(); // clean up export directories
     let nav_documents = export_documents(&mut document_mapping, documents, book, fonts, None);
     generate_side_navbar(nav_documents); // generate the html code for the right side navbar
+
+    generate_fuzzyfile(&document_mapping);
 
     document_mapping
 }
