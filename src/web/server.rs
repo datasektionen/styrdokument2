@@ -72,6 +72,11 @@ fn favicon() -> Redirect {
     Redirect::to("/static/favicon.svg")
 }
 
+#[get("/fuzzyfile")]
+fn fuzzyfile() -> Redirect {
+    Redirect::to("/public/fuzzyfile")
+}
+
 /// Main web function, which basically starts the Rocket server.
 pub fn rocket(documents: HashMap<String, WebDocument>) -> Rocket<Build> {
     let spaceship = DocumentKeeper { hash: documents };
@@ -85,5 +90,5 @@ pub fn rocket(documents: HashMap<String, WebDocument>) -> Rocket<Build> {
             FileServer::new(PDF_DIRECTORY, Options::None),
         )
         .mount("/static", FileServer::new("static", Options::None))
-        .mount("/", routes![index, favicon, display_document])
+        .mount("/", routes![index, favicon, display_document, fuzzyfile])
 }

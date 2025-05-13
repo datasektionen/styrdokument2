@@ -24,3 +24,4 @@ target/
 /pdfs
 templates/documents
 templates/navbar.html.tera
+public/fuzzyfile

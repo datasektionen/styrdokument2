@@ -1,5 +1,6 @@
 mod exporter;
 mod file_handler;
+mod fuzzyfile;
 mod typst_wrapper;
 
 use std::collections::HashMap;
