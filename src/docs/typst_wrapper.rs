@@ -188,7 +188,7 @@ impl FileEntry {
     }
 }
 
-impl<'a> typst::World for Asgård<'a> {
+impl typst::World for Asgård<'_> {
     /// The standard library.
     ///
     /// Can be created through `Library::build()`.
@@ -198,7 +198,7 @@ impl<'a> typst::World for Asgård<'a> {
 
     /// Metadata about all known fonts.
     fn book(&self) -> &LazyHash<FontBook> {
-        &self.book
+        self.book
     }
 
     /// Get the file id of the main source file.
