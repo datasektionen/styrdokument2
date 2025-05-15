@@ -38,12 +38,12 @@ use super::file_handler::TypstDocument;
 ///   [FontBook].
 /// * `files` contains all files that have been found in the project. Don't think too much about
 ///   it.
-pub struct Asgård {
+pub struct Asgård<'a> {
     library: LazyHash<Library>,
-    book: LazyHash<FontBook>,
+    book: &'a LazyHash<FontBook>,
     root: PathBuf,
     source: HashMap<FileId, FileEntry>,
-    fonts: Vec<Font>,
+    fonts: &'a Vec<Font>,
     files: Arc<Mutex<HashMap<FileId, FileEntry>>>,
 }
 
@@ -52,9 +52,13 @@ const MAIN: &str = "/main.typ";
 /// The absolute path to where the typst templating files are stored.
 const DOCUMENT_PATH: &str = "./typst/";
 
-impl Asgård {
+impl<'a> Asgård<'a> {
     /// Creates a typst [World] intended for `pdf` output. This will include document formatting.
-    pub fn pdf(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> Self {
+    pub fn pdf(
+        document: &TypstDocument,
+        book: &'a LazyHash<FontBook>,
+        fonts: &'a Vec<Font>,
+    ) -> Self {
         let content = format!(
             r#"
 #import "template.typ": *
@@ -72,7 +76,11 @@ impl Asgård {
     }
 
     /// Creates a typst [World] intended for `html` output. This does not include any formatting.
-    pub fn html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> Self {
+    pub fn html(
+        document: &TypstDocument,
+        book: &'a LazyHash<FontBook>,
+        fonts: &'a Vec<Font>,
+    ) -> Self {
         let content = format!(
             r#"
 #include "{}"
@@ -84,7 +92,12 @@ impl Asgård {
     }
 
     /// Creates a new [Asgård] typst [World].
-    fn new(document: &TypstDocument, content: String, book: FontBook, fonts: Vec<Font>) -> Self {
+    fn new(
+        document: &TypstDocument,
+        content: String,
+        book: &'a LazyHash<FontBook>,
+        fonts: &'a Vec<Font>,
+    ) -> Self {
         let mut sources = HashMap::new();
         let main = create_source(MAIN, content.clone());
         let main_entry = FileEntry::new(content.into(), Some(main.clone()));
@@ -100,7 +113,7 @@ impl Asgård {
         let lib = asgård_library();
         Self {
             library: LazyHash::new(lib),
-            book: LazyHash::new(book),
+            book,
             fonts,
             root,
             source: sources,
@@ -175,7 +188,7 @@ impl FileEntry {
     }
 }
 
-impl typst::World for Asgård {
+impl<'a> typst::World for Asgård<'a> {
     /// The standard library.
     ///
     /// Can be created through `Library::build()`.
@@ -239,7 +252,7 @@ fn create_file_id(filename: &str) -> FileId {
 }
 
 /// Creates a [FontBook] which indexes the [Vec<Font>].
-pub fn create_fontbook() -> (FontBook, Vec<Font>) {
+pub fn create_fontbook() -> (LazyHash<FontBook>, Vec<Font>) {
     let paths = fs::read_dir("typst/fonts/").expect("Could not find ./typst/fonts");
 
     let mut fonts = Vec::new();
@@ -266,5 +279,5 @@ pub fn create_fontbook() -> (FontBook, Vec<Font>) {
         fontbook.push(info);
     }
 
-    (fontbook, fonts)
+    (LazyHash::new(fontbook), fonts)
 }

@@ -4,7 +4,10 @@ use std::{
     io::{BufWriter, Write},
 };
 
-use typst::text::{Font, FontBook};
+use typst::{
+    text::{Font, FontBook},
+    utils::LazyHash,
+};
 use typst_pdf::PdfOptions;
 
 use super::{
@@ -75,7 +78,7 @@ pub fn export(documents: &Vec<TypstDocument>) -> HashMap<String, WebDocument> {
     let mut document_mapping = HashMap::new();
 
     prepare_export_dirs(); // clean up export directories
-    let nav_documents = export_documents(&mut document_mapping, documents, book, fonts, None);
+    let nav_documents = export_documents(&mut document_mapping, documents, &book, &fonts, None);
     generate_side_navbar(nav_documents); // generate the html code for the right side navbar
 
     generate_fuzzyfile(&document_mapping);
@@ -88,8 +91,8 @@ pub fn export(documents: &Vec<TypstDocument>) -> HashMap<String, WebDocument> {
 fn export_documents(
     map: &mut HashMap<String, WebDocument>,
     documents: &Vec<TypstDocument>,
-    book: FontBook,
-    fonts: Vec<Font>,
+    book: &LazyHash<FontBook>,
+    fonts: &Vec<Font>,
     url_path: Option<&str>,
 ) -> Vec<NavDocument> {
     let mut nav_documents = Vec::new();
@@ -100,7 +103,7 @@ fn export_documents(
         };
 
         println!("exporting {}...", d.name());
-        let pdf_url = export_document(d, book.clone(), fonts.clone());
+        let pdf_url = export_document(d, book, fonts);
         println!("...{} exported", d.name());
 
         if map
@@ -112,7 +115,7 @@ fn export_documents(
 
         let sub_docs = d
             .sub_documents()
-            .map(|ds| export_documents(map, ds, book.clone(), fonts.clone(), Some(url)));
+            .map(|ds| export_documents(map, ds, book, fonts, Some(url)));
 
         nav_documents.push(NavDocument {
             name: d.name().to_string(),
@@ -125,14 +128,18 @@ fn export_documents(
 }
 
 /// Exports a single [TypstDocument] to it's `html` and `pdf` variant.
-fn export_document(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> String {
-    export_html(document, book.clone(), fonts.clone());
+fn export_document(
+    document: &TypstDocument,
+    book: &LazyHash<FontBook>,
+    fonts: &Vec<Font>,
+) -> String {
+    export_html(document, book, fonts);
     export_pdf(document, book, fonts)
 }
 
 /// Export a [TypstDocument] to a `pdf` document.
-fn export_pdf(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> String {
-    let docjob = Asgård::pdf(document, book.clone(), fonts.clone());
+fn export_pdf(document: &TypstDocument, book: &LazyHash<FontBook>, fonts: &Vec<Font>) -> String {
+    let docjob = Asgård::pdf(document, book, fonts);
     let typed_doc = typst::compile(&docjob)
         .output
         .expect("Error compiling pdf version");
@@ -145,7 +152,7 @@ fn export_pdf(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) -> Str
 }
 
 /// Export a [TypstDocument] to a `html` document.
-fn export_html(document: &TypstDocument, book: FontBook, fonts: Vec<Font>) {
+fn export_html(document: &TypstDocument, book: &LazyHash<FontBook>, fonts: &Vec<Font>) {
     let htmljob = Asgård::html(document, book, fonts);
     let typed_hmtl = typst::compile(&htmljob)
         .output
