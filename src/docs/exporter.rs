@@ -147,7 +147,7 @@ fn export_pdf(document: &TypstDocument, book: &LazyHash<FontBook>, fonts: &Vec<F
     let pdf = typst_pdf::pdf(&typed_doc, &PdfOptions::default()).expect("Error generating pdf");
 
     let path = format!("./{}/{}.pdf", PDF_DIRECTORY, document.filename_name());
-    fs::write(path.clone(), pdf).expect("Error writing PDF.");
+    fs::write(&path, pdf).expect("Error writing PDF.");
     path
 }
 
